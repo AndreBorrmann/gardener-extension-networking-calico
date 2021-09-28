@@ -1,6 +1,8 @@
 global:
-  podCIDR: ""
+  podCIDR4: ""
+  podCIDR6: ""
 config:
+  dualstack: false
   veth_mtu: 1440
   backend: bird
   monitoring:
@@ -9,6 +11,8 @@ config:
     typhaMetricsPort: 9093
   ipam:
     type: "host-local"
+    assign_ipv4: true
+    assign_ipv6: false
     # subnet: "usePodCidr"
   kubeControllers:
     enabled: true

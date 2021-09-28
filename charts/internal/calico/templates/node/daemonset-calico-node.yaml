@@ -183,9 +183,17 @@ spec:
             {{- end }}
             - name: IP
               value: "autodetect"
+            {{- if .Values.config.dualstack }}
+            # Enable IPV6 on Kubernetes.
+            - name: FELIX_IPV6SUPPORT
+              value: "true"
+            - name: IP6
+              value: "autodetect"
+            {{- else }}
             # Disable IPV6 on Kubernetes.
             - name: FELIX_IPV6SUPPORT
               value: "false"
+            {{- end }}
             {{- if semverCompare ">= 1.16" .Capabilities.KubeVersion.GitVersion  }}
             # Enable or Disable VXLAN on the default IP pool.
             - name: CALICO_IPV4POOL_VXLAN
@@ -218,7 +226,11 @@ spec:
             # chosen from this range. Changing this value after installation will have
             # no effect. This should fall within `--cluster-cidr`.
             - name: CALICO_IPV4POOL_CIDR
-              value: "{{ .Values.global.podCIDR }}"
+              value: "{{ .Values.global.podCIDR4 }}"
+            {{- if .Values.config.dualstack }}
+            - name: CALICO_IPV6POOL_CIDR
+              value: "{{ .Values.global.podCIDR6 }}"
+            {{- end }}
             - name: FELIX_IPINIPENABLED
               value: "{{ .Values.config.felix.ipinip.enabled }}"
             - name: "CALICO_IPV4POOL_{{ .Values.config.ipv4.pool | upper }}"

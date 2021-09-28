@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
+	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/gardener/gardener v1.32.0
 	github.com/gardener/gardener-resource-manager v0.25.0
@@ -18,6 +19,7 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/ulikunitz/xz v0.5.10 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	k8s.io/api v0.21.2
 	k8s.io/apimachinery v0.21.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
@@ -28,6 +30,7 @@ require (
 )
 
 replace (
+	github.com/gardener/gardener => /Users/d054981/go/src/github.com/gardener/gardener
 	github.com/gardener/gardener-resource-manager/api => github.com/gardener/gardener-resource-manager/api v0.25.0
 	k8s.io/api => k8s.io/api v0.21.2
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.2

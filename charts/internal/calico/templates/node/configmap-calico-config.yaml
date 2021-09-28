@@ -36,16 +36,15 @@ data:
           "datastore_type": "kubernetes",
           "nodename": "__KUBERNETES_NODE_NAME__",
           "mtu": __CNI_MTU__,
-        {{- if .Values.config.ipam.subnet }}
           "ipam": {
             "type": "{{ .Values.config.ipam.type }}",
+            {{- if .Values.config.dualstack }}
+            "assign_ipv4": "{{ .Values.config.ipam.assign_ipv4 }}",
+            "assign_ipv6": "{{ .Values.config.ipam.assign_ipv6 }}",
+            {{- end }}
+          {{- if .Values.config.ipam.subnet }}
             "subnet": "{{ .Values.config.ipam.subnet }}"
-          },
-        {{- else }}
-          "ipam": {
-            "type": "{{ .Values.config.ipam.type }}",
-          },
-        {{- end }}
+          {{- end }}
           "policy": {
             "type": "k8s"
           },

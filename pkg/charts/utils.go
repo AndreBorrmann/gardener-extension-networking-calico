@@ -25,6 +25,7 @@ import (
 	"github.com/gardener/gardener-extension-networking-calico/pkg/imagevector"
 
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
+	"github.com/gardener/gardener/pkg/utils/cidrs"
 )
 
 const (
@@ -42,6 +43,7 @@ type calicoConfig struct {
 	KubeControllers kubeControllers        `json:"kubeControllers"`
 	VethMTU         string                 `json:"veth_mtu"`
 	Monitoring      monitoring             `json:"monitoring"`
+	DualStack       bool                   `json:"dualstack"`
 }
 
 type felix struct {
@@ -69,8 +71,10 @@ type ipv4 struct {
 }
 
 type ipam struct {
-	IPAMType string `json:"type"`
-	Subnet   string `json:"subnet"`
+	IPAMType   string `json:"type"`
+	Subnet     string `json:"subnet"`
+	AssignIpv4 bool   `json:"assign_ipv4"`
+	AssignIpv6 bool   `json:"assign_ipv6"`
 }
 
 type kubeControllers struct {
@@ -108,8 +112,10 @@ var defaultCalicoConfig = calicoConfig{
 		AutoDetectionMethod: nil,
 	},
 	IPAM: ipam{
-		IPAMType: hostLocal,
-		Subnet:   usePodCIDR,
+		IPAMType:   hostLocal,
+		Subnet:     usePodCIDR,
+		AssignIpv4: true,
+		AssignIpv6: false,
 	},
 	Typha: typha{
 		Enabled: true,
@@ -123,6 +129,7 @@ var defaultCalicoConfig = calicoConfig{
 		FelixMetricsPort: "9091",
 		TyphaMetricsPort: "9093",
 	},
+	DualStack: false,
 }
 
 func newCalicoConfig() calicoConfig {
@@ -144,7 +151,8 @@ func (c *calicoConfig) toMap() (map[string]interface{}, error) {
 
 // ComputeCalicoChartValues computes the values for the calico chart.
 func ComputeCalicoChartValues(network *extensionsv1alpha1.Network, config *calicov1alpha1.NetworkConfig, workerSystemComponentsActivated bool, kubernetesVersion string, wantsVPA bool, kubeProxyEnabled bool) (map[string]interface{}, error) {
-	typedConfig, err := generateChartValues(config, kubeProxyEnabled)
+	cidrPair := cidrs.MustParseCidrs(network.Spec.PodCIDR)
+	typedConfig, err := generateChartValues(config, kubeProxyEnabled, cidrPair.IsDualStack())
 	if err != nil {
 		return nil, fmt.Errorf("error when generating calico config: %v", err)
 	}
@@ -166,7 +174,8 @@ func ComputeCalicoChartValues(network *extensionsv1alpha1.Network, config *calic
 			calico.ClusterProportionalVerticalAutoscalerImageName: imagevector.ClusterProportionalVerticalAutoscalerImage(kubernetesVersion),
 		},
 		"global": map[string]string{
-			"podCIDR": network.Spec.PodCIDR,
+			"podCIDR4": cidrPair.V4Cidr.String(),
+			"podCIDR6": cidrPair.V6Cidr.String(),
 		},
 		"config": calicoConfig,
 	}
@@ -179,7 +188,7 @@ func ComputeCalicoChartValues(network *extensionsv1alpha1.Network, config *calic
 	return calicoChartValues, nil
 }
 
-func generateChartValues(config *calicov1alpha1.NetworkConfig, kubeProxyEnabled bool) (*calicoConfig, error) {
+func generateChartValues(config *calicov1alpha1.NetworkConfig, kubeProxyEnabled bool, dualStack bool) (*calicoConfig, error) {
 	c := newCalicoConfig()
 	if config == nil {
 		return &c, nil
@@ -214,7 +223,11 @@ func generateChartValues(config *calicov1alpha1.NetworkConfig, kubeProxyEnabled 
 		if config.IPAM.Type == hostLocal && config.IPAM.CIDR != nil {
 			c.IPAM.Subnet = string(*config.IPAM.CIDR)
 		}
+		c.IPAM.AssignIpv4 = config.IPAM.AssignIpv4
+		c.IPAM.AssignIpv6 = config.IPAM.AssignIpv6
 	}
+
+	c.DualStack = dualStack
 
 	if config.IPv4 != nil {
 		if config.IPv4.Pool != nil {

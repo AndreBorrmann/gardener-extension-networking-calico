@@ -101,6 +101,10 @@ type IPAM struct {
 	Type string
 	// CIDR defines the CIDR block to be used
 	CIDR *CIDR
+	// configure calico to assign IPv4 addresses
+	AssignIpv4 bool `json:"assign_ipv4,omitempty"`
+	// configure calico to assign Ipv6 addresses
+	AssignIpv6 bool `json:"assign_ipv6,omitempty"`
 }
 
 // Typha defines the block with configurations for calico typha
